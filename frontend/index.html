@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edudemia - Observatorio Demográfico Educativo Colombia</title>
+    
+    <!-- Hoja de Estilos Principal -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Leaflet CSS para Web GIS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <nav>
+        <a href="#demografia" class="brand-container">
+            <img src="assets/img/logo.jpg" alt="Edudemia Colombia" class="brand-logo-img">
+            <div class="logo-text">
+                EDUDEMIA <span>COLOMBIA</span>
+                <span class="logo-subtitle">Inteligencia Demográfica Educativa</span>
+            </div>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#demografia">Censo Demográfico</a></li>
+            <li><a href="#mapa-gis">Colegios a la Redonda</a></li>
+            <li><a href="#estrategia">Plataforma Estratégica</a></li>
+            <li><a href="#estrategia-prescriptiva">Diagnóstico Prescriptivo</a></li>
+        </ul>
+        <button class="btn-portal" onclick="openModal()">Acceso Directivos</button>
+    </nav>
+
+    <!-- Hero / Banner Principal con Filtros en Tiempo Real (Módulo A) -->
+    <section class="hero-section" id="demografia">
+        <div>
+            <h1 class="hero-title">Observatorio de Natalidad y <span>Matrícula Escolar</span></h1>
+            <p class="hero-desc">Herramienta analítica de alta precisión para rectores y coordinadores. Mapee la reducción demográfica de estudiantes en Colombia según su departamento, municipio y zonificación oficial.</p>
+            
+            <!-- Controles de Censo Demográfico Cruzado -->
+            <div class="filter-box-hero">
+                <div class="filter-group">
+                    <label for="depSelect">1. Departamento</label>
+                    <select id="depSelect">
+                        <option value="1">Cundinamarca</option>
+                        <option value="2">Antioquia</option>
+                        <option value="3">Valle del Cauca</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="munSelect">2. Municipio</label>
+                    <select id="munSelect">
+                        <option value="1">Bogotá D.C. (Fontibón)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="ambSelect">3. Ámbito Territorial</label>
+                    <select id="ambSelect">
+                        <option value="Urbano">Urbano Cabecera</option>
+                        <option value="Rural Centro">Rural Centro Poblado</option>
+                        <option value="Rural Disperso">Rural Disperso</option>
+                    </select>
+                </div>
+                <button class="btn-search" id="btnSearch">
+                    <span>📊 Consultar Curva de Natalidad en mi Localidad</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="hero-graphic">
+            <div class="radar-circle">
+                <div class="radar-ping"></div>
+                <span style="font-size:0.85rem; color:var(--accent-cyan); font-weight:bold; z-index:2;">[ DANE / SIMAT ]</span>
+            </div>
+            <h3 style="font-size:1.1rem; margin-bottom:0.4rem;">Monitoreo Geoespacial Activo</h3>
+            <p style="font-size:0.82rem; color:var(--text-muted); max-width:320px;">Transición demográfica y tasa de reemplazo infantil en el sector educativo colombiano.</p>
+        </div>
+    </section>
+
+    <!-- Métricas Circulares / Tipo Radar -->
+    <section class="metrics-section" id="colegios">
+        <div class="metric-card">
+            <div class="circle-graph" id="metricDescenso">-15.4%</div>
+            <h3>Descenso de Natalidad</h3>
+            <p>Caída proyectada en la cohorte escolar de 0 a 5 años en la localidad consultada.</p>
+        </div>
+        <div class="metric-card">
+            <div class="circle-graph" id="metricColegios">5 km</div>
+            <h3>Colegios a la Redonda</h3>
+            <p>Identificación georreferenciada de colegios oficiales y privados en su entorno inmediato.</p>
+        </div>
+        <div class="metric-card">
+            <div class="circle-graph" id="metricAmbitos">3 Opciones</div>
+            <h3>Análisis Territorial</h3>
+            <p>Evaluación discriminada por ámbito Urbano, Rural Centro Poblado y Rural Disperso.</p>
+        </div>
+    </section>
+
+    <!-- Banner Dashboard de Análisis Gráfico Neón -->
+    <section class="analytics-banner">
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="title">Tendencia de Nacimientos y Cohorte Infantil (2019 - 2024)</span>
+                <span class="badge">DANE Estadísticas Vitales</span>
+            </div>
+            <!-- Gráfico de barras reactivo -->
+            <div class="bar-chart-container" id="barChartContainer">
+                <!-- Se llena dinámicamente vía charts.js -->
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="title">Oferta en la Zona</span>
+                <span class="badge">SIMAT</span>
+            </div>
+            <div class="summary-list">
+                <p>🏫 Colegios Oficiales: <strong id="countOficiales">--</strong></p>
+                <p>🏫 Colegios No Oficiales: <strong id="countNoOficiales">--</strong></p>
+                <p>📍 Radio de Cobertura: <strong id="radioKmSpan">5 km</strong></p>
+                <p>⚡ Geolocalización: <strong>Haversine GIS</strong></p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-header">
+                <span class="title">Segmentación Poblacional</span>
+                <span class="badge">Proyección</span>
+            </div>
+            <div class="summary-list">
+                <p>🏢 Urbano Cabecera: <strong id="pctUrbano">--%</strong></p>
+                <p>🏡 Rural Centro: <strong id="pctRuralCentro">--%</strong></p>
+                <p>🌾 Rural Disperso: <strong id="pctRuralDisperso">--%</strong></p>
+                <p>⚖️ Reemplazo Generacional: <strong style="color:var(--danger-red);">En declive</strong></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Web GIS: Búsqueda Activa a 5 km a la Redonda (Módulo C.1) -->
+    <section class="gis-section" id="mapa-gis">
+        <div class="gis-header">
+            <div>
+                <h2>Búsqueda Activa y Oferta Circundante (<span>Radio de 5 km</span>)</h2>
+                <p style="color:var(--text-muted); font-size:0.9rem; margin-top:4px;">
+                    Visualización en tiempo real de colegios públicos y privados, buffer geoespacial de 5 km y familias buscando cupo escolar.
+                </p>
+            </div>
+            <div class="gis-badge-info">
+                <div class="map-theme-toggle">
+                    <button type="button" class="btn-theme active" id="btnThemeAzulNoche" onclick="EdudemiaMap.setTheme('azul_noche')">🌙 Azul Noche</button>
+                    <button type="button" class="btn-theme" id="btnThemeBlanco" onclick="EdudemiaMap.setTheme('blanco')">☀️ Blanco</button>
+                </div>
+                <div class="badge-pill">Colegios en el Radio: <strong id="geoTotalSchools">--</strong></div>
+                <div class="badge-pill">Familias Buscando Cupo: <strong id="geoTotalDemand">--</strong></div>
+            </div>
+        </div>
+
+        <div class="map-card-wrapper">
+            <div id="map"></div>
+            <div class="map-sidebar">
+                <div class="sidebar-panel">
+                    <h4>🏛️ Directorio en Proximidad (5 km)</h4>
+                    <div class="school-list-scroll" id="schoolsListMini">
+                        <!-- Items cargados dinámicamente -->
+                    </div>
+                </div>
+                <div class="sidebar-panel" style="background:#0a1733;">
+                    <h4 style="color:var(--accent-gold);">🎯 Demanda de Cupos</h4>
+                    <p style="font-size:0.8rem; color:#cbd5e1; line-height:1.4;">
+                        Los marcadores verdes representan familias geolocalizadas consultando vacantes en Transición, Primaria y Media.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Clara: Captura Lead Magnet y Toma de Decisiones (Módulo B) -->
+    <section class="white-section" id="estrategia">
+        <div>
+            <h2>Toma de Decisiones y Recomendaciones Estratégicas</h2>
+            <p style="color:#64748b; margin-bottom: 1.5rem;">Nuestra plataforma procesa la información para que directivos docentes transformen la incertidumbre demográfica en ventajas competitivas y de planeación institucional.</p>
+            
+            <div class="feature-box">
+                <h4>1. Diagnóstico de Competencia Circundante (GIS)</h4>
+                <p style="font-size:0.88rem; color:#64748b;">Conozca con exactitud la ubicación, sector y cuota de mercado de instituciones a 5 km a la redonda con algoritmo Haversine.</p>
+            </div>
+            <div class="feature-box">
+                <h4>2. Recomendaciones Automatizadas y Prescriptivas</h4>
+                <p style="font-size:0.88rem; color:#64748b;">Reciba estrategias automáticas sobre capacidad instalada, fusión de grupos de primera infancia y apertura de educación media técnica.</p>
+            </div>
+            <div class="feature-box">
+                <h4>3. Cumplimiento de Habeas Data Colombia</h4>
+                <p style="font-size:0.88rem; color:#64748b;">Tratamiento estricto y seguro de sus datos institucionales bajo la Ley Estatutaria 1581 de 2012.</p>
+            </div>
+        </div>
+
+        <!-- Formulario Estático Lead Magnet -->
+        <div class="lead-card-static">
+            <span class="lead-badge">ACCESO AL INFORME</span>
+            <h3 style="margin-bottom:0.4rem; color: var(--bg-dark); font-size:1.3rem;">Generar Reporte Institucional</h3>
+            <p style="font-size:0.85rem; color:#64748b; margin-bottom:1.5rem;">Ingrese su nombre y correo institucional para desbloquear el Session Pass y descargar la radiografía demográfica de su municipio.</p>
+            
+            <form id="staticLeadForm">
+                <input type="text" id="staticLeadName" class="form-input" placeholder="Nombre completo o Cargo institucional" required>
+                <input type="email" id="staticLeadEmail" class="form-input" placeholder="Correo electrónico institucional (@colegio.edu.co)" required>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="staticLeadHabeas" required checked>
+                    <label for="staticLeadHabeas">
+                        Autorizo el tratamiento de mis datos personales para fines diagnósticos conforme a la <strong>Ley 1581 de 2012</strong> (Habeas Data Colombia).
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-trigger-modal">
+                    <span>📥 Ver Diagnóstico y Desbloquear Opciones Avanzadas</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Módulo C.2: Comparativa y Diagnóstico Prescriptivo (Plataforma Hermana) -->
+    <section class="estrategia-section" id="estrategia-prescriptiva">
+        <div class="estrategia-container">
+            <div class="estrategia-header">
+                <h2>Módulo Comparativo y <span>Diagnóstico Prescriptivo</span></h2>
+                <p>Cruce los datos históricos de matrícula de su institución con la natalidad territorial del DANE y la oferta en 5 km para recibir recomendaciones estratégicas automatizadas.</p>
+            </div>
+
+            <div class="strat-grid">
+                <!-- Formulario de Matrícula Institucional -->
+                <div class="strat-form-card">
+                    <h3 style="color:#fff; font-size:1.15rem; margin-bottom:1rem; display:flex; align-items:center; gap:8px;">
+                        <span>📋 Datos Propios del Colegio</span>
+                    </h3>
+                    
+                    <div style="margin-bottom:1.2rem; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="badge-pill" id="btnPresetFederici" style="cursor:pointer; background:#081226; color:var(--accent-cyan);">
+                            ⚡ Cargar Muestra Federici (Oficial)
+                        </button>
+                        <button type="button" class="badge-pill" id="btnPresetGimnasio" style="cursor:pointer; background:#081226; color:var(--accent-gold);">
+                            ⚡ Cargar Muestra Gimnasio (Privado)
+                        </button>
+                    </div>
+
+                    <form id="stratForm">
+                        <div class="filter-group" style="margin-bottom:1rem;">
+                            <label>Nombre de la Institución</label>
+                            <input type="text" id="colegioNombre" value="Colegio Carlo Federici (IED)" required>
+                        </div>
+                        <div class="filter-group" style="margin-bottom:1rem;">
+                            <label>Sector</label>
+                            <select id="colegioSector">
+                                <option value="Oficial">Oficial / Público</option>
+                                <option value="No Oficial">No Oficial / Privado</option>
+                            </select>
+                        </div>
+
+                        <p style="font-size:0.8rem; color:var(--accent-cyan); font-weight:bold; margin-bottom:0.6rem; text-transform:uppercase;">
+                            Histórico de Matrícula en Transición (Grado Inicial):
+                        </p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; margin-bottom:1.2rem;">
+                            <div class="filter-group">
+                                <label>2021</label>
+                                <input type="number" id="mat2021" value="95" required>
+                            </div>
+                            <div class="filter-group">
+                                <label>2022</label>
+                                <input type="number" id="mat2022" value="82" required>
+                            </div>
+                            <div class="filter-group">
+                                <label>2023</label>
+                                <input type="number" id="mat2023" value="74" required>
+                            </div>
+                            <div class="filter-group">
+                                <label>2024</label>
+                                <input type="number" id="mat2024" value="63" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-search" style="margin-top:0;">
+                            <span>⚡ Ejecutar Motor de Diagnóstico Prescriptivo</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Resultados y Recomendaciones Prescriptivas -->
+                <div class="strat-results-card" id="stratResultsContainer">
+                    <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); text-align:center; padding:2rem;">
+                        <span style="font-size:3rem; margin-bottom:1rem;">🧠</span>
+                        <h4 style="color:#fff; margin-bottom:0.5rem;">Motor de Recomendaciones Listo</h4>
+                        <p style="max-width:400px; font-size:0.88rem;">
+                            Complete el formulario de matrícula o seleccione una plantilla para cruzar con el DANE y obtener las 3 recomendaciones estratégicas para su institución.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL EMERGENTE / POPUP (Lead Capture + Upsell de Plataforma Hermana) -->
+    <div class="modal-overlay" id="leadModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            
+            <div class="modal-header">
+                <img src="assets/img/logo.jpg" alt="Edudemia Logo">
+                <h3 id="modalHeaderTitle">🚀 Acceso al Diagnóstico Estratégico</h3>
+                <p id="modalHeaderDesc">Ingrese sus credenciales directivas para descargar el reporte demográfico de su zona.</p>
+            </div>
+
+            <form id="modalLeadForm">
+                <input type="text" id="modalLeadName" class="form-input" placeholder="Nombre Completo o Cargo" required>
+                <input type="email" id="modalLeadEmail" class="form-input" placeholder="Correo Electrónico Institucional" required>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="modalLeadHabeas" required checked>
+                    <label for="modalLeadHabeas" style="color:#cbd5e1;">
+                        Acepto el tratamiento de datos personales de acuerdo con la <strong>Ley 1581 de 2012</strong>.
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-search" style="margin-top: 0;">
+                    <span>Generar Session Pass y Desbloquear Reporte</span>
+                </button>
+            </form>
+
+            <div id="downloadContainer" style="display:none; margin-top:1.2rem;">
+                <button class="btn-portal" id="btnDownloadReport" style="width:100%; padding:0.9rem;">
+                    📥 Descargar Informe Completo en PDF / JSON
+                </button>
+            </div>
+
+            <!-- Upsell: Módulo Estratégico Avanzado / Plataforma Hermana -->
+            <div class="upsell-card">
+                <h4>⭐ Módulo Estratégico Avanzado (Plataforma Hermana)</h4>
+                <p><strong>1. Demanda Activa en Tiempo Real:</strong> Acceda a los focos de geodemanda donde estudiantes y familias buscan cupos en su zona (radio de 5 km).</p>
+                <p style="margin-top: 0.5rem;"><strong>2. Comparativa y Prescripción:</strong> Suba sus datos de matrícula interna y reciba recomendaciones automáticas de capacidad instalada y retención escolar.</p>
+                <button class="btn-upsell" onclick="closeModal(); document.getElementById('mapa-gis').scrollIntoView({behavior:'smooth'});">
+                    Explorar Visor Web GIS y Diagnóstico Avanzado
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EMERGENTE DE SUSCRIPCIÓN (PAYWALL EN PESOS COLOMBIANOS COP) -->
+    <div class="modal-overlay" id="subscriptionModal">
+        <div class="modal-content modal-content-subscription">
+            <span class="close-modal" onclick="closeSubscriptionModal()">&times;</span>
+            
+            <div class="modal-header">
+                <img src="assets/img/logo.jpg" alt="Edudemia Logo">
+                <h3 style="color:var(--accent-cyan); font-size:1.6rem; margin-bottom:0.3rem;">
+                    🔒 Suscripción Requerida - Módulo Prescriptivo
+                </h3>
+                <p style="color:var(--text-muted); font-size:0.92rem; max-width:620px; margin:0 auto;">
+                    Para ejecutar el cruce analítico de matrícula y acceder a las recomendaciones estratégicas automatizadas de su institución, elija su plan en <strong>Pesos Colombianos (COP)</strong>.
+                </p>
+            </div>
+
+            <!-- Selector de Planes -->
+            <div class="pricing-grid">
+                <!-- Plan Mensual -->
+                <div class="plan-card" id="cardPlanMensual" onclick="selectPlan('mensual')">
+                    <div>
+                        <div class="plan-name">Plan Mensual</div>
+                        <div class="plan-price-cop">$189.000 COP</div>
+                        <div class="plan-freq">Cobro mensual recurrente.<br>Sin cláusula de permanencia.</div>
+                        <ul class="plan-features">
+                            <li>Diagnóstico prescriptivo para 1 sede</li>
+                            <li>Cruce de cohorte natalidad DANE</li>
+                            <li>Alertas de riesgo en grados iniciales</li>
+                            <li>Soporte técnico por correo</li>
+                        </ul>
+                    </div>
+                    <div style="text-align:center; margin-top:10px;">
+                        <input type="radio" name="planChoice" id="radioMensual" value="mensual">
+                        <label for="radioMensual" style="color:var(--accent-cyan); font-size:0.85rem; font-weight:bold; cursor:pointer;"> Seleccionar Mensual</label>
+                    </div>
+                </div>
+
+                <!-- Plan Trimestral (Recomendado) -->
+                <div class="plan-card selected" id="cardPlanTrimestral" onclick="selectPlan('trimestral')">
+                    <span class="plan-badge-top">⭐ MÁS POPULAR</span>
+                    <div>
+                        <div class="plan-name">Plan Trimestral Pro</div>
+                        <div class="plan-price-cop">$489.000 COP</div>
+                        <div class="plan-freq">Facturación cada 3 meses.<br><strong>Ahorre 14%</strong> ($163.000 COP/mes).</div>
+                        <ul class="plan-features">
+                            <li>Todo lo del Plan Mensual</li>
+                            <li>Web GIS interactivo (radio 5 km)</li>
+                            <li>Mapeo de demanda activa de familias</li>
+                            <li>Descargas de informes ilimitadas</li>
+                            <li>Hasta 3 sedes institucionales</li>
+                        </ul>
+                    </div>
+                    <div style="text-align:center; margin-top:10px;">
+                        <input type="radio" name="planChoice" id="radioTrimestral" value="trimestral" checked>
+                        <label for="radioTrimestral" style="color:var(--accent-cyan); font-size:0.85rem; font-weight:bold; cursor:pointer;"> Seleccionar Trimestral</label>
+                    </div>
+                </div>
+
+                <!-- Plan Anual (Mejor Valor) -->
+                <div class="plan-card" id="cardPlanAnual" onclick="selectPlan('anual')">
+                    <span class="plan-badge-top" style="background:linear-gradient(90deg, #00d2ff, #0072ff); color:#fff;">💎 MEJOR VALOR</span>
+                    <div>
+                        <div class="plan-name">Plan Anual Institucional</div>
+                        <div class="plan-price-cop">$1.690.000 COP</div>
+                        <div class="plan-freq">Facturación anual.<br><strong>Ahorre 25%</strong> ($140.833 COP/mes).</div>
+                        <ul class="plan-features">
+                            <li>Todo lo del Plan Trimestral</li>
+                            <li>Sedes ilimitadas del municipio</li>
+                            <li>Acompañamiento de consultor demográfico</li>
+                            <li>Informes listos para Consejo Directivo</li>
+                            <li>Soporte preferente 24/7</li>
+                        </ul>
+                    </div>
+                    <div style="text-align:center; margin-top:10px;">
+                        <input type="radio" name="planChoice" id="radioAnual" value="anual">
+                        <label for="radioAnual" style="color:var(--accent-cyan); font-size:0.85rem; font-weight:bold; cursor:pointer;"> Seleccionar Anual</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Pago Simulado -->
+            <form id="subscriptionCheckoutForm">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:0.8rem;">
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--accent-cyan); font-weight:bold;">INSTITUCIÓN EDUCATIVA</label>
+                        <input type="text" id="subColegioNombre" class="form-input" placeholder="Nombre del Colegio" required style="margin-bottom:0; margin-top:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; color:var(--accent-cyan); font-weight:bold;">CORREO DIRECTIVO</label>
+                        <input type="email" id="subCorreo" class="form-input" placeholder="rectoria@colegio.edu.co" required style="margin-bottom:0; margin-top:4px;">
+                    </div>
+                </div>
+
+                <!-- Pasarela de Pago Simulada (Colombia) -->
+                <div class="payment-method-box">
+                    <h4>💳 Método de Pago Simulado (Pesos Colombianos):</h4>
+                    <div class="payment-options-grid">
+                        <div class="payment-radio-card selected" id="payMethodPSE" onclick="selectPaymentMethod('PSE')">
+                            <strong>🏦 PSE</strong>
+                            <div style="font-size:0.72rem; color:var(--text-muted);">Débito bancario en línea</div>
+                        </div>
+                        <div class="payment-radio-card" id="payMethodCard" onclick="selectPaymentMethod('TARJETA')">
+                            <strong>💳 Tarjeta de Crédito</strong>
+                            <div style="font-size:0.72rem; color:var(--text-muted);">Visa / Mastercard / Amex</div>
+                        </div>
+                        <div class="payment-radio-card" id="payMethodInvoice" onclick="selectPaymentMethod('FACTURA_INSTITUCIONAL')">
+                            <strong>📑 Factura Institucional</strong>
+                            <div style="font-size:0.72rem; color:var(--text-muted);">Orden de Compra / Tesorería</div>
+                        </div>
+                    </div>
+
+                    <!-- Campos según medio de pago -->
+                    <div id="pseFields">
+                        <label style="font-size:0.75rem; color:var(--text-muted); font-weight:bold;">SELECCIONE SU ENTIDAD FINANCIERA (COLOMBIA):</label>
+                        <select id="subBancoPse" class="form-input" style="margin-top:4px; margin-bottom:0; background:#040914; color:#fff;">
+                            <option value="Bancolombia">Bancolombia</option>
+                            <option value="Nequi">Nequi</option>
+                            <option value="Davivienda">Davivienda</option>
+                            <option value="Banco de Bogotá">Banco de Bogotá</option>
+                            <option value="Daviplata">Daviplata</option>
+                            <option value="Banco de Occidente">Banco de Occidente</option>
+                            <option value="BBVA Colombia">BBVA Colombia</option>
+                        </select>
+                    </div>
+
+                    <div id="cardFields" style="display:none;">
+                        <input type="text" class="form-input" placeholder="Número de tarjeta simulada: 4532 •••• •••• 1234" value="4532 8901 2345 6789" style="margin-top:4px; margin-bottom:0; background:#040914; color:#fff;">
+                    </div>
+
+                    <div id="invoiceFields" style="display:none;">
+                        <input type="text" class="form-input" placeholder="NIT o Código DANE de la Institución: 860.000.123-4" value="900.345.678-1" style="margin-top:4px; margin-bottom:0; background:#040914; color:#fff;">
+                    </div>
+                </div>
+
+                <div style="margin-top:1.2rem; text-align:center;">
+                    <button type="submit" class="btn-search" style="margin-top:0; width:100%; font-size:1.05rem;">
+                        <span id="btnSubmitSubText">🚀 Activar Suscripción Trimestral ($489.000 COP) y Ejecutar Motor</span>
+                    </button>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-top:8px;">
+                        🔒 Transacción segura en entorno simulado. Sin cobro real a su cuenta. Genera licencia institucional inmediata.
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div>
+            <div class="brand-container" style="margin-bottom:1rem;">
+                <img src="assets/img/logo.jpg" alt="Edudemia" style="height:36px; background:#fff; padding:2px 5px; border-radius:6px;">
+                <h3 style="color:white; margin:0; font-size:1.2rem;">EDUDEMIA COLOMBIA</h3>
+            </div>
+            <p>Plataforma de Inteligencia Demográfica, Web GIS y Prospectiva Escolar para Colombia.</p>
+            <p style="font-size:0.75rem; margin-top:0.8rem; color:#64748b;">
+                Fuentes: DANE (Estadísticas Vitales) - MEN (SIMAT) - Zonificación Oficial.
+            </p>
+        </div>
+        <div>
+            <h4>Observatorio</h4>
+            <ul>
+                <li><a href="#demografia">Natalidad Colombia</a></li>
+                <li><a href="#demografia">Censo Educativo</a></li>
+                <li><a href="#demografia">Zonificación DANE</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Directivos</h4>
+            <ul>
+                <li><a href="#mapa-gis">Colegios a 5 km</a></li>
+                <li><a href="#estrategia-prescriptiva">Carga de Datos</a></li>
+                <li><a href="#estrategia-prescriptiva">Recomendaciones</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Seguridad & Ley</h4>
+            <ul>
+                <li><a href="#">Habeas Data (Ley 1581)</a></li>
+                <li><a href="#">Términos de Uso</a></li>
+                <li><a href="#">Política de Privacidad</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS para Mapas Web GIS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Scripts Modulares Desacoplados -->
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
+

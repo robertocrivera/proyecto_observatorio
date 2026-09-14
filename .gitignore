@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Testing & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Base de datos local (se genera automáticamente al iniciar o con seed_massive.py)
+# database/edudemia.db
+
+# Entorno & Configuración local
+.env
+.env.local
+
+# IDE & Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Sistema Operativo
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
